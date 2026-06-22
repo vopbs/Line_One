@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f1ea">
+  <title>Line One 网页话机</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="modal-open">
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">L1</span>
+        <div>
+          <strong>Line One</strong>
+          <span>WebRTC SIP Phone</span>
+        </div>
+      </div>
+      <div id="registrationBadge" class="registration-badge offline">
+        <span class="status-dot"></span>
+        <span id="registrationText">未注册</span>
+      </div>
+      <div class="mode-switch" aria-label="界面模式">
+        <button id="simpleMode" type="button">简易</button>
+        <button id="proMode" class="active" type="button">专业</button>
+      </div>
+      <button id="openTrace" class="trace-launch" type="button">信令交互</button>
+      <button id="shutdownApp" class="trace-launch shutdown-button" type="button">退出程序</button>
+    </header>
+
+    <section class="workspace">
+      <aside class="registration-card">
+        <div class="section-heading">
+          <div>
+            <span class="section-index">01</span>
+            <h2>最近通话</h2>
+          </div>
+          <button id="logoutButton" class="text-button danger-text" type="button" hidden>切换话机</button>
+        </div>
+
+        <section id="callHistory" class="call-history">
+          <div class="history-heading">
+            <div>
+              <span class="section-index">RECENT</span>
+              <h3>呼出记录</h3>
+            </div>
+            <button id="clearHistory" class="text-button" type="button">清空</button>
+          </div>
+          <div id="historyList" class="history-list"></div>
+          <div id="historyEmpty" class="history-empty">
+            <span>暂无通话记录</span>
+            <small>完成呼叫后会显示在这里</small>
+          </div>
+        </section>
+      </aside>
+
+      <section class="phone-card">
+        <div class="section-heading">
+          <div>
+            <span class="section-index">02</span>
+            <h2>拨号</h2>
+          </div>
+          <span id="callTimer" class="call-timer">00:00</span>
+        </div>
+
+        <div class="call-display">
+          <span id="callStatus" class="call-status">等待注册</span>
+          <input id="destination" type="tel" inputmode="tel" autocomplete="off" placeholder="输入号码" disabled>
+          <button id="backspace" class="backspace" type="button" aria-label="删除一位" disabled>⌫</button>
+        </div>
+
+        <div class="call-settings">
+          <label>
+            <span>语音编码</span>
+            <select id="codec">
+              <option value="pcmu">G.711U / PCMU</option>
+              <option value="pcma">G.711A / PCMA</option>
+              <option value="g729" disabled>G.729（需要转码组件）</option>
+            </select>
+          </label>
+          <label>
+            <span>呼叫音频来源</span>
+            <select id="audioMode">
+              <option value="microphone">耳麦实时通话</option>
+              <option value="file">音频文件播报</option>
+            </select>
+          </label>
+          <label id="audioFileControl" class="audio-file-control" hidden>
+            <span>播报音频文件</span>
+            <input id="audioFile" type="file" accept="audio/*">
+            <button id="chooseAudio" type="button">选择音频文件</button>
+            <small id="audioFileName">未选择音频</small>
+          </label>
+        </div>
+
+        <div id="keypad" class="keypad" aria-label="拨号键盘"></div>
+
+        <div class="call-actions">
+          <button id="call" class="call-button" type="button" disabled>
+            <span class="phone-icon">↗</span>
+            <span>呼叫</span>
+          </button>
+          <button id="hangup" class="hangup-button" type="button" disabled>
+            <span class="phone-icon">×</span>
+            <span>挂断</span>
+          </button>
+        </div>
+
+        <div class="tech-note">
+          <span class="status-dot"></span>
+          <span id="mediaStats">PCMU / G.711 · WebRTC DTLS-SRTP · SIP UDP</span>
+        </div>
+        <div class="retention-note">提示：信令记录仅保存在当前运行期间，程序重启后会清空。</div>
+        <audio id="remoteAudio" autoplay></audio>
+      </section>
+    </section>
+
+  </main>
+
+  <div id="traceModal" class="trace-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="traceTitle" hidden>
+    <section class="trace-window">
+      <header class="trace-window-header">
+        <div>
+          <span class="modal-kicker">CALL FLOW</span>
+          <h2 id="traceTitle">信令交互</h2>
+          <span id="traceCount" class="trace-count">0 条</span>
+        </div>
+        <div class="trace-actions">
+          <select id="traceFilter" aria-label="信令筛选">
+            <option value="all">全部</option>
+            <option value="out">主叫发送</option>
+            <option value="in">被叫返回</option>
+          </select>
+          <button id="pauseTrace" type="button">暂停</button>
+          <button id="exportTrace" type="button">导出</button>
+          <button id="clearTrace" type="button">清空</button>
+          <button id="closeTrace" class="trace-close" type="button" aria-label="关闭">×</button>
+        </div>
+      </header>
+      <div class="trace-workspace">
+        <div class="trace-flow-pane">
+          <div class="trace-column-head">
+            <span>序号</span>
+            <b>主叫信令</b>
+            <b>被叫信令</b>
+            <span>真实时间</span>
+          </div>
+          <div id="traceList" class="trace-list"></div>
+          <div id="traceEmpty" class="trace-empty">等待 SIP 信令...</div>
+          <div id="laneResize" class="lane-resize" title="拖动调整主叫/被叫宽度"></div>
+        </div>
+        <div id="tracePaneResize" class="trace-pane-resize" title="拖动调整详情宽度"></div>
+        <aside class="trace-detail-pane">
+          <div class="trace-detail-title">详细信令</div>
+          <pre id="traceDetail" class="trace-detail">选择一条信令查看原始报文</pre>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <div id="loginModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="loginTitle" hidden>
+    <section class="modal-card account-modal">
+      <div class="modal-header">
+        <span class="modal-kicker">SIP / UDP</span>
+        <h2 id="loginTitle">选择话机配置</h2>
+        <p id="loginDescription">选择一个已保存的 SIP 账号进行注册。</p>
+      </div>
+      <div id="profilePicker" class="profile-picker">
+        <div id="profileList" class="profile-list"></div>
+        <button id="addProfile" class="secondary-button full-button" type="button">新增 SIP 话机</button>
+        <p id="profileError" class="form-error" role="alert"></p>
+      </div>
+      <form id="registrationForm" hidden>
+        <label>
+          <span>注册地址</span>
+          <input id="sipServer" name="server" autocomplete="off" placeholder="127.0.0.1:5060" required>
+        </label>
+        <label>
+          <span>SIP 账号</span>
+          <input id="sipUsername" name="username" autocomplete="username" placeholder="请输入账号" required>
+        </label>
+        <label>
+          <span>SIP 密码</span>
+          <span class="password-field">
+            <input id="sipPassword" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required>
+            <button id="togglePassword" type="button" aria-label="显示密码">显示</button>
+          </span>
+        </label>
+        <button id="registerButton" class="primary-button" type="submit">
+          <span>保存并注册</span>
+          <span aria-hidden="true">→</span>
+        </button>
+        <button id="cancelProfileForm" class="secondary-button full-button" type="button">返回配置列表</button>
+        <p id="registrationError" class="form-error" role="alert"></p>
+      </form>
+    </section>
+  </div>
+
+  <div id="logoutModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="logoutTitle" hidden>
+    <section class="modal-card confirm-modal">
+      <span class="confirm-icon">↪</span>
+      <h2 id="logoutTitle">切换当前话机？</h2>
+      <p>当前 SIP 注册将断开，随后可以选择其他已保存的话机配置。</p>
+      <div class="modal-actions">
+        <button id="cancelLogout" class="secondary-button" type="button">取消</button>
+        <button id="confirmLogout" class="danger-button" type="button">确认退出</button>
+      </div>
+      <p id="logoutError" class="form-error" role="alert"></p>
+    </section>
+  </div>
+  <div id="registrationLostModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="registrationLostTitle" hidden>
+    <section class="modal-card confirm-modal">
+      <span class="confirm-icon">!</span>
+      <h2 id="registrationLostTitle">SIP 注册已失效</h2>
+      <p id="registrationLostMessage">密码可能已变更，请重新登录或编辑话机配置。</p>
+      <div class="modal-actions single-action">
+        <button id="confirmRegistrationLost" class="danger-button" type="button">确定</button>
+      </div>
+    </section>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>

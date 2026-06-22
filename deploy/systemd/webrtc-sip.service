@@ -1,0 +1,19 @@
+[Unit]
+Description=Local WebRTC to SIP UDP Gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=webrtc-sip
+Group=webrtc-sip
+WorkingDirectory=/opt/webrtc-sip
+EnvironmentFile=-/etc/webrtc-sip.env
+ExecStart=/opt/webrtc-sip/webrtc-sip
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

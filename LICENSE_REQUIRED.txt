@@ -1,0 +1,8 @@
+Before publishing this repository, choose and add a LICENSE file.
+
+Recommended options:
+- MIT: permissive use, modification, and redistribution.
+- Apache-2.0: permissive license with explicit patent terms.
+- GPL-3.0: derivative works must remain open source under GPL-3.0.
+
+Without a LICENSE file, other people do not have clear permission to copy, modify, or distribute this project.
